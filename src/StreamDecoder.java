@@ -1,5 +1,10 @@
 import java.util.Base64;
 
+/**
+ * helper class for decoding output stream messages.
+ *
+ * @author Marcin Bondaruk
+ */
 public abstract class StreamDecoder
 {
     public static String decode(String serialized)
@@ -8,7 +13,7 @@ public abstract class StreamDecoder
     }
 
     public static String[] deserialize(String encodedCommand)
-    {;
+    {
         String[] parts = encodedCommand.split(",");
         String[] decoded = new String[parts.length];
 

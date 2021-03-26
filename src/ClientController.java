@@ -1,5 +1,10 @@
 import java.io.*;
 
+/**
+ * Controls data flow between GUI and Websocket client
+ *
+ * @author Marcin Bondaruk
+ */
 public final class ClientController
 {
     private ServerCommunicator serverCommunicator;
@@ -18,6 +23,12 @@ public final class ClientController
         return this.serverCommunicator.initConnection(ip, Integer.parseInt(port));
     }
 
+    /**
+     * Tries to register user on server with given username
+     * Awaits for succes acknowledgement.
+     *
+     * @param user user to register
+     */
     public boolean registerUser(String user) {
         try {
             ClientMessageRegister clientMsg = new ClientMessageRegister(user);
@@ -26,19 +37,26 @@ public final class ClientController
 
             return true;
         } catch(MaximumAwaitTimeReached e) {
+            this.serverCommunicator.disconnect();
             return false;
         } catch (InterruptedException e) {
+            this.serverCommunicator.disconnect();
             return false;
         }
     }
 
+    /**
+     * Retrieves current online users from server
+     *
+     * @throws NoResponseException
+     */
     public String[] getOnlineUsersList() throws NoResponseException
     {
         try {
             ClientMessageGetOnline getOnlineMsg = new ClientMessageGetOnline();
             this.serverCommunicator.send(getOnlineMsg);
             ServerMessage serverMsg = this.await("ONLINE_LIST");
-            return serverMsg.message();
+            return serverMsg.message().split(",");
         } catch (MaximumAwaitTimeReached e) {
             throw new NoResponseException();
         } catch (InterruptedException e) {
@@ -46,6 +64,11 @@ public final class ClientController
         }
     }
 
+    /**
+     * Disconnects user from the server (possible bugs)
+     *
+     * @param user user to disconnect
+     */
     public void disconnect(String user)
     {
         ClientMessageDisconnect disconnectMsg = new ClientMessageDisconnect(user);
@@ -53,6 +76,13 @@ public final class ClientController
         this.serverCommunicator.disconnect();
     }
 
+    /**
+     * Delivers message to the server based on sender (from) and reciepient (to)
+     *
+     * @param from sender
+     * @param to recipient
+     * @param contents message contents
+     */
     public boolean deliverMessage(String from, String to, String contents)
     {
         try {
@@ -69,6 +99,14 @@ public final class ClientController
         }
     }
 
+    /**
+     * Awaits for server response for a message of given type
+     *
+     * @param type message type to await for
+     *
+     * @throws MaximumAwaitTimeReached
+     * @throws InterruptedException
+     */
     private ServerMessage await(String type) throws MaximumAwaitTimeReached, InterruptedException
     {
         int tries = 7;

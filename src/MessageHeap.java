@@ -1,5 +1,10 @@
 import java.util.HashMap;
 
+/**
+ * Holds all server messages except of Deliery messages.
+ *
+ * @author Marcin Bondaruk
+ */
 public final class MessageHeap
 {
     private HashMap<String, ServerMessage> messageHeap;
@@ -9,22 +14,22 @@ public final class MessageHeap
         this.messageHeap = new HashMap<>();
     }
 
-    public void add(String id, ServerMessage ServerMessage)
+    synchronized public void add(String id, ServerMessage ServerMessage)
     {
         this.messageHeap.put(id, ServerMessage);
     }
 
-    public boolean hasMessage(String id)
+    synchronized public boolean hasMessage(String id)
     {
         return this.messageHeap.containsKey(id);
     }
 
-    public ServerMessage getMessageById(String id)
+    synchronized public ServerMessage getMessageById(String id)
     {
         return this.messageHeap.get(id);
     }
 
-    public void remove(String id)
+    public synchronized void remove(String id)
     {
         this.messageHeap.remove(id);
     }

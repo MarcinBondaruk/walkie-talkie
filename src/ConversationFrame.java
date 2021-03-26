@@ -1,6 +1,11 @@
 import java.awt.*;
 import java.awt.event.*;
 
+/**
+ * Main conversation frame
+ *
+ * @author Marcin Bondaruk
+ */
 public class ConversationFrame extends Frame implements ActionListener, WindowListener
 {
     private ClientFrame cfref;
@@ -34,6 +39,16 @@ public class ConversationFrame extends Frame implements ActionListener, WindowLi
         setSize(400,400);
     }
 
+    public void postMessage(String from, String message)
+    {
+        this.conversationTextArea.append(this.formatMessage(from, message));
+    }
+
+    public TextArea getMessageBox()
+    {
+        return this.conversationTextArea;
+    }
+
     private TextArea createTextArea(int rows, int cols)
     {
         TextArea ta = new TextArea(rows, cols);
@@ -52,11 +67,22 @@ public class ConversationFrame extends Frame implements ActionListener, WindowLi
     public void actionPerformed(ActionEvent action)
     {
         String message = this.messageTextArea.getText();
-        this.conversationTextArea.append(this.formatMessage(this.recipient, message));
-        this.messageTextArea.setText("");
+        String user = this.cfref.getStateContainer().currentUser();
+        Boolean result = this.cfref.getController().deliverMessage(
+            user,
+            this.recipient,
+            message
+        );
+
+        if (result) {
+            this.conversationTextArea.append(this.formatMessage(user, message));
+            this.messageTextArea.setText("");
+        } else {
+            new ErrorFrame("Something went wrong. Message not delivered");
+        }
     }
 
-    private String formatMessage(String from, String message)
+    public String formatMessage(String from, String message)
     {
         return "" + from + " wrote:\n" + message + "\n";
     }

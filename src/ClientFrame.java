@@ -1,6 +1,11 @@
 import java.awt.*;
 import java.awt.event.*;
 
+/**
+ * Main client frame. Base for all others.
+ *
+ * @author Marcin Bondaruk
+ */
 public class ClientFrame extends Frame implements WindowListener
 {
     private class SetupPanel extends Panel implements ActionListener
@@ -52,13 +57,17 @@ public class ClientFrame extends Frame implements WindowListener
             add(this.disconnectBtn);
         }
 
+        /**
+         * determines which button was clicked and invokes proper action
+         */
         public void actionPerformed(ActionEvent event)
         {
             switch (event.getActionCommand()) {
                 case "CONN_INIT":
                     this.handleConnectionAction(
                         this.ipTF.getText(),
-                        this.portTF.getText()
+                        this.portTF.getText(),
+                        this.usernameTF.getText()
                     );
                     break;
                 case "DISCONNECT":
@@ -69,50 +78,61 @@ public class ClientFrame extends Frame implements WindowListener
             }
         }
 
-        private void handleConnectionAction(String ip, String port)
+        /**
+         * validates GUI inputs. Proceedes with connection and user registration or raises an Error.
+         */
+        private void handleConnectionAction(String ip, String port, String username)
         {
             if (port.length() < 1) {
                 new ErrorFrame("Port field cannot be empty or negative!");
             } else if (ip.length() < 7) {
                 new ErrorFrame("Invalid or empty ip address!");
+            } else if (username.length() < 1) {
+                new ErrorFrame("Username must not be empty!");
             } else {
-                boolean result = this.cfref.getController()
-                    .initConnection(ip, Integer.parseInt(port));
+                boolean connResult = this.cfref.getController()
+                .initConnection(ip, port);
 
-                if (result) {
-                    Response response = this.cfref.getController()
-                        .sendMessage(new RegisterCommand(this.usernameTF.getText()));
+                if (connResult) {
+                    boolean registResult = this.cfref.getController().registerUser(username);
 
-                    if (response.result()) {
-                        this.ipTF.setEditable(false);
-                        this.portTF.setEditable(false);
-                        this.usernameTF.setEditable(false);
-                        this.connectBtn.setEnabled(false);
-                        this.disconnectBtn.setEnabled(true);
-                        this.cfref.getStateContainer().setCurrentUser(this.usernameTF.getText());
+                    if (registResult) {
+                        this.disableConnectionPanel();
+                        this.cfref.getStateContainer().setCurrentUser(username);
 
                         this.onlineListFrame = new OnlineListFrame(this.cfref);
                     } else {
-                        this.cfref.getController().disconnect();
-                        new ErrorFrame(response.message());
+                        new ErrorFrame("Username is taken.");
                     }
                 } else {
-                    this.cfref.getController().disconnect();
                     new ErrorFrame("Something went wrong.");
                 }
             }
         }
 
-        private void handleDisconnectAction()
+        private void disableConnectionPanel()
         {
-            this.cfref.getController().sendMessage(new DisconnectCommand(this.cfref.getStateContainer().currentUser()));
-            this.cfref.getController().disconnect();
-            this.onlineListFrame.dispose();
+            this.ipTF.setEditable(false);
+            this.portTF.setEditable(false);
+            this.usernameTF.setEditable(false);
+            this.connectBtn.setEnabled(false);
+            this.disconnectBtn.setEnabled(true);
+        }
+
+        private void enableConnectionPanel()
+        {
             this.ipTF.setEditable(true);
             this.portTF.setEditable(true);
             this.usernameTF.setEditable(true);
             this.connectBtn.setEnabled(true);
             this.disconnectBtn.setEnabled(false);
+        }
+
+        private void handleDisconnectAction()
+        {
+            this.cfref.getController().disconnect(this.cfref.getStateContainer().currentUser());
+            this.onlineListFrame.dispose();
+            this.enableConnectionPanel();
         }
     }
 
@@ -145,11 +165,10 @@ public class ClientFrame extends Frame implements WindowListener
 
     public void windowClosing(WindowEvent event)
     {
-        if (this.getController().isConnected()) {
-            this.getController().sendMessage(new DisconnectCommand(this.getStateContainer().currentUser()));
+        if (!this.getStateContainer().currentUser().isEmpty()) {
+            this.clientController.disconnect(this.getStateContainer().currentUser());
         }
 
-        this.clientController.disconnect();
         System.exit(0);
     }
 

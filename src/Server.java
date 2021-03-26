@@ -7,15 +7,9 @@ public final class Server
     {
         int port = 1990;
         OnlineList onlineList = new OnlineList();
+        ServerController serverController = new ServerController(onlineList);
         ServerSocket serverSocket = null;
         System.out.println("server started");
-
-        /**
-        *  Boostrap server
-        *  initialize clients list
-        *  initialize message queue
-        *  initialize worker
-        */
 
         try {
             serverSocket = new ServerSocket(port);
@@ -25,7 +19,7 @@ public final class Server
         }
 
         while(true) {
-            (new ClientSocketThread(serverSocket.accept(), onlineList)).start();
+            (new ClientSocketThread(serverSocket.accept(), serverController)).start();
         }
     }
 }

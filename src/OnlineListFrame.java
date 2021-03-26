@@ -58,19 +58,25 @@ public class OnlineListFrame extends Frame implements ActionListener, WindowList
 
     private void refreshOnlineList()
     {
-        this.online = this.cfref.getController().sendMessage(new GetOnlineCommand()).message().split(",");
-        Arrays.sort(this.online);
-        this.onlineList.removeAll();
+        try {
+            this.online = this.cfref.getController().getOnlineUsersList();
+            Arrays.sort(this.online);
+            this.onlineList.removeAll();
 
-        for(String user : this.online) {
-            onlineList.add(user);
+            for(String user : this.online) {
+                onlineList.add(user);
+            }
+        } catch (NoResponseException e) {
+            new ErrorFrame("Could not load Online list, try refreshing");
         }
+
     }
 
     private void beginConversation(String recipientName)
     {
-        if (this.cfref.getStateContainer().openConversation(recipientName)) {
-            new ConversationFrame(this.cfref, recipientName);
+        if (!this.cfref.getStateContainer().isBusy(recipientName)) {
+            ConversationFrame convFrame = new ConversationFrame(this.cfref, recipientName);
+            this.cfref.getStateContainer().openConversation(recipientName, convFrame);
         } else {
             new ErrorFrame("Conversation already in progress...");
         }

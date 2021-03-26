@@ -1,31 +1,42 @@
 import java.util.*;
 import java.net.*;
+import java.io.*;
 
+/**
+ * Holds all online users and its socket's output streams references
+ *
+ * @author Marcin Bondaruk
+ */
 public final class OnlineList
 {
-    private HashMap<String, Socket> onlineUsers;
+    private HashMap<String, PrintWriter> onlineUsers;
 
     public OnlineList()
     {
         this.onlineUsers = new HashMap<>();
     }
 
-    public void add(String username, Socket socket)
+    public synchronized void add(String username, PrintWriter socketOutput)
     {
-        this.onlineUsers.put(username, socket);
+        this.onlineUsers.put(username, socketOutput);
     }
 
-    public void remove(String username)
+    public synchronized PrintWriter getMessageByUser(String username)
+    {
+        return this.onlineUsers.get(username);
+    }
+
+    public synchronized void remove(String username)
     {
         this.onlineUsers.remove(username);
     }
 
-    public boolean isOnline(String username)
+    public synchronized boolean isOnline(String username)
     {
         return this.onlineUsers.containsKey(username);
     }
 
-    public String whosOnline()
+    public synchronized String whosOnline()
     {
         return String.join(",", this.onlineUsers.keySet());
     }

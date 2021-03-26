@@ -1,22 +1,27 @@
 import java.io.*;
 import java.net.*;
 
+/**
+ * Server side thread that handles clients messages and communication
+ *
+ * @author Marcin Bondaruk
+ */
 public final class ClientSocketThread extends Thread
 {
     private Socket socket;
     private BufferedReader inputStream;
     private PrintWriter outputStream;
-    private OnlineList onlineList;
+    private ServerController serverController;
 
     public ClientSocketThread(
         Socket socket,
-        OnlineList onlineList
+        ServerController serverController
     ) throws IOException
     {
         this.socket = socket;
         this.inputStream = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
         this.outputStream = new PrintWriter(this.socket.getOutputStream(), true);
-        this.onlineList = onlineList;
+        this.serverController = serverController;
     }
 
     public void run()
@@ -25,15 +30,12 @@ public final class ClientSocketThread extends Thread
 
         try {
             while(!interrupted()) {
-                String encodedCommand = this.inputStream.readLine();
-                if (!encodedCommand.isEmpty()) {
-                    this.interpretCommand(CommandDecoder.deserialize(encodedCommand));
+                String encodedMessage = this.inputStream.readLine();
+
+                if (encodedMessage != null && !encodedMessage.isEmpty()) {
+                    this.interpretCommand(StreamDecoder.deserialize(encodedMessage));
                 }
             }
-
-            this.inputStream.close();
-            this.outputStream.close();
-            this.socket.close();
         } catch(IOException e) {
             System.err.println(e.getMessage());
         }
@@ -42,47 +44,21 @@ public final class ClientSocketThread extends Thread
     private void interpretCommand(String[] deserializedCommand) throws IOException
     {
         switch(deserializedCommand[0]) {
-            case "REGISTER":
-                this.registerNewUser(new RegisterCommand(deserializedCommand[1]));
-                break;
-            case "MESSAGE_TO":
-                break;
-            case "GET_ONLINE":
-                this.sendOnlineList();
+            case "DELIVER":
+                this.serverController.deliverMessage(deserializedCommand, this.outputStream);
                 break;
             case "DISCONNECT":
-                this.disconnect(new DisconnectCommand(deserializedCommand[1]));
+                this.serverController.disconnect(deserializedCommand, this.outputStream);
+                interrupt();
+                break;
+            case "GET_ONLINE":
+                this.serverController.getOnlineList(this.outputStream);
+                break;
+            case "REGISTER":
+                this.serverController.registerUser(deserializedCommand, this.outputStream);
                 break;
             default:
                 break;
         }
-    }
-
-    private synchronized void registerNewUser(RegisterCommand command)
-    {
-        if (!this.onlineList.isOnline(command.username())) {
-            this.onlineList.add(command.username(), this.socket);
-            System.out.println("User joined: " + command.username());
-        } else {
-            this.outputStream.println(this.getSerializedResponse("failed", "USERNAME_IN_USE"));
-        }
-    }
-
-    private void sendOnlineList() throws IOException
-    {
-        this.outputStream.println(this.getSerializedResponse("success", this.onlineList.whosOnline()));
-    }
-
-    private synchronized void disconnect(DisconnectCommand command)
-    {
-        this.onlineList.remove(command.username());
-        this.outputStream.println(this.getSerializedResponse("success", command.username()));
-        System.out.println("User logged out: " + command.username());
-        interrupt();
-    }
-
-    private String getSerializedResponse(String result, String message)
-    {
-        return new Response(result, message).serialize();
     }
 }

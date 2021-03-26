@@ -1,16 +1,27 @@
 import java.net.*;
 import java.io.*;
 
+/**
+ * Client side class.
+ * Serves as a wrapper for Websocket communication
+ *
+ * @author Marcin Bondaruk
+ */
 public final class ServerCommunicator
 {
     private Socket socket;
     private PrintWriter outputStream;
     private BufferedReader inputStream;
+    private MessageHeap messageHeap;
+    private ClientWorkerThread cwt;
+    private StateContainer stateContainer;
     private boolean isConnected;
 
-    public ServerCommunicator()
+    public ServerCommunicator(MessageHeap messageHeap, StateContainer stateContainer)
     {
         this.isConnected = false;
+        this.messageHeap = messageHeap;
+        this.stateContainer = stateContainer;
     }
 
     public boolean isConnected()
@@ -23,7 +34,9 @@ public final class ServerCommunicator
         String msg = "";
         try {
             msg = this.inputStream.readLine();
-        } catch(IOException e) {}
+        } catch(IOException e) {
+            System.out.println(e.getMessage());
+        }
 
         return msg;
     }
@@ -36,6 +49,10 @@ public final class ServerCommunicator
                 outputStream = new PrintWriter(this.socket.getOutputStream(), true);
                 inputStream = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
                 this.isConnected = true;
+
+                MessageHeap messageHeap = new MessageHeap();
+                this.cwt = new ClientWorkerThread(this, this.messageHeap, this.stateContainer);
+                cwt.start();
             }
             return true;
         } catch(UnknownHostException e) {
@@ -49,6 +66,7 @@ public final class ServerCommunicator
     {
         try {
             if (this.isConnected) {
+                this.cwt.interrupt();
                 this.socket.close();
             }
         } catch(IOException e) {}
