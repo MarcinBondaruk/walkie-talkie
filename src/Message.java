@@ -1,8 +1,8 @@
-public abstract class Command
+public abstract class Message
 {
     protected String type;
 
-    public Command(String type)
+    public Message(String type)
     {
         this.type = type;
     }
@@ -11,6 +11,4 @@ public abstract class Command
     {
         return this.type;
     }
-
-    public abstract String serialize();
 }

@@ -5,8 +5,10 @@ public final class Client
 {
     public static void main(String[] args) throws IOException
     {
-        ClientController clientController = new ClientController();
+        ServerCommunicator serverCommunicator = new ServerCommunicator();
         StateContainer stateContainer = new StateContainer();
+        ClientController clientController = new ClientController(serverCommunicator);
+
         new ClientFrame(clientController, stateContainer);
     }
 }

@@ -44,6 +44,9 @@ public final class ClientSocketThread extends Thread
         switch(deserializedCommand[0]) {
             case "REGISTER":
                 this.registerNewUser(new RegisterCommand(deserializedCommand[1]));
+                break;
+            case "MESSAGE_TO":
+                break;
             case "GET_ONLINE":
                 this.sendOnlineList();
                 break;
