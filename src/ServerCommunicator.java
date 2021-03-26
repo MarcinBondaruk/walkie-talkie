@@ -58,10 +58,4 @@ public final class ServerCommunicator
     {
         this.outputStream.println(message.serialize());
     }
-
-    // private Response deserializeResponse(String serializedResponse)
-    // {
-    //     String[] deserialized = CommandDecoder.deserialize(serializedResponse);
-    //     return new Response(deserialized[0], deserialized[1]);
-    // }
 }

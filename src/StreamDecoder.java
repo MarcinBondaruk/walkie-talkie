@@ -1,6 +1,6 @@
 import java.util.Base64;
 
-public abstract class CommandDecoder
+public abstract class StreamDecoder
 {
     public static String decode(String serialized)
     {
@@ -13,7 +13,7 @@ public abstract class CommandDecoder
         String[] decoded = new String[parts.length];
 
         for (int i = 0; i < parts.length; i++) {
-            decoded[i] = CommandDecoder.decode(parts[i]);
+            decoded[i] = StreamDecoder.decode(parts[i]);
         }
 
         return decoded;
